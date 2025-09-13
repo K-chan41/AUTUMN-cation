@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="icon" type="image/png" sizes="16x16" href="images/logo.svg">
+  <title>ようこそ｜世界一堅牢な認証</title>
+  <meta name="robots" content="index,follow" />
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+      --brand:#1a5bff; --brand-ink:#fff; --ghost:#f3f4f6; --ghost-ink:#111827;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      background:var(--bg); color:var(--ink);
+      display:flex; flex-direction:column;
+    }
+    header{border-bottom:1px solid var(--line); background:#fff}
+    .wrap{max-width:960px; margin:0 auto; padding:16px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .brand svg{width:28px; height:28px}
+    .brand-link{display:flex; align-items:center; gap:12px; color:inherit; text-decoration:none; padding:6px 8px; border-radius:10px}
+    .brand-link:hover{background:#f3f4f6}
+    .brand-link:focus{outline:2px solid #93c5fd; outline-offset:2px}
+    .brand-title{font-weight:800; letter-spacing:.02em}
+
+    main{flex:1}
+    .hidden{display:none !important;}
+    .hero{max-width:720px; width:min(720px,100%); margin:32px auto; padding:24px; background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,.04); min-height: 400px;   display: flex; flex-direction: column; justify-content: center;}
+    .hero > .card{ width:100%; }
+    .card{margin-bottom:36px}
+    .logo{display:flex; justify-content:center; margin:8px 0 16px}
+    .logo svg{width:80px; height:80px}
+    .lead{font-size:20px; font-weight:800; text-align:center; margin:4px 0 12px}
+    .sub{color:var(--muted); text-align:center; margin:0 0 20px}
+
+    .actions{display:flex; flex-direction:column; gap:12px; align-items:center}
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:.5rem; padding:12px 18px; border-radius:10px; border:0; cursor:pointer; font-weight:800; letter-spacing:.02em}
+    .btn-primary{background:var(--brand); color:var(--brand-ink); width:min(420px, 100%)}
+    .btn-ghost {background: transparent; color: var(--brand); padding: 0; border: none; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;}
+    .btn-ghost:hover {opacity: 0.8;}
+    .hint{color:var(--muted); font-size:12px; text-align:center; margin: 4px 0;}
+    .err{color:#b91c1c; text-align:center; margin-top:10px; font-size:12px}
+
+    .loading { display:flex; align-items:center; gap:10px; justify-content:center; margin:12px 0; }
+    .spinner { width:24px; height:24px; border:2px solid #c7d2fe; border-top-color:#1a5bff; border-radius:50%; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .dim { opacity: .6; pointer-events: none; }
+
+    .tea{display:flex; justify-content:center; margin:24px 0 24px}
+    .tea svg{width:80px; height:80px}
+
+    /* 入力フォーム（電話番号/メール） */
+    input[type="text"]{
+      width:min(420px, 100%);
+      display:block;
+      margin:10px auto 8px;
+      padding:12px 14px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#fff;
+      color:var(--ink);
+      font-size:16px;
+      outline:none;
+      transition:border-color .2s, box-shadow .2s;
+      -webkit-appearance:none; appearance:none;
+    }
+    input[type="text"]::placeholder{ color:#9ca3af; }
+    input[type="text"]:focus{
+      border-color:#93c5fd;
+      box-shadow:0 0 0 3px rgba(59,130,246,.15);
+    }
+
+    /* 適切な余白 */
+    .card{ margin-bottom:18px; }
+    .card .actions{ margin-top:12px; }
+    .hero{ padding:32px; }
+
+    /* 顔認証カメラ */
+    .camera{ position:relative; width:min(420px, 100%); aspect-ratio:3/4; background:#000; margin:0 auto 12px; border-radius:12px; overflow:hidden; }
+    .camera video{ width:100%; height:100%; object-fit:cover; transform: scaleX(-1); }
+    .camera .frame{ display:none; }
+    .camera .overlay{ position:absolute; inset:0; pointer-events:none; }
+    /* 音量メーター */
+    .meter{ position:relative; --threshold:95%; width:min(420px, 100%); height:12px; background:var(--line); border-radius:999px; margin:8px auto 12px; overflow:hidden; }
+    .meter .bar{ position:relative; z-index:1; height:100%; width:0%; background:linear-gradient(90deg,#93c5fd,#1a5bff); transition:width .08s linear; }
+    .meter .no-go{ position:absolute; z-index:0; left:var(--threshold); right:0; top:0; bottom:0; background:repeating-linear-gradient(45deg, rgba(239,68,68,0.12) 0 6px, rgba(239,68,68,0.24) 6px 12px); }
+    .meter .marker{ position:absolute; z-index:2; left:var(--threshold); top:-6px; bottom:-6px; width:3px; background:#ef4444; box-shadow:0 0 0 1px rgba(255,255,255,0.9) inset, 0 0 6px rgba(239,68,68,0.6); opacity:.95; }
+    .meter .marker::before{ content:""; position:absolute; top:-6px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:6px solid #ef4444; filter:drop-shadow(0 0 2px rgba(239,68,68,.5)); }
+
+    /* reCAPTCHA風 checkbox */
+    .captcha-box{ position:relative; max-width:420px; margin:0 auto; padding:12px 14px; border:1px solid var(--line); border-radius:12px; display:flex; align-items:center; gap:12px; background:#fff; }
+    .captcha-box.error{ border-color:#ef4444 !important; }
+    .captcha-box .cbx{ position:relative; width:22px; height:22px; border:2px solid #9ca3af; border-radius:2px; background:#fff; flex:0 0 auto; }
+    .captcha-box .cbx input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+    .captcha-box .cbx .tick{ position:absolute; inset:0; display:none; }
+    .captcha-box .cbx.checked{ border-color:#1a5bff; background:#1a5bff; }
+    .captcha-box .cbx.checked .tick{ display:block; }
+    .captcha-box .cbx.checked .tick::after{ content:""; position:absolute; left:6px; top:2px; width:6px; height:12px; border-right:3px solid #fff; border-bottom:3px solid #fff; transform:rotate(45deg); }
+    .captcha-box .cbx .mini-spinner{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; }
+    .captcha-box .cbx .mini-spinner::after{ content:""; width:14px; height:14px; border:2px solid #c7d2fe; border-top-color:#1a5bff; border-radius:50%; animation:spin .8s linear infinite; display:block; }
+    .captcha-box .cbx.loading .mini-spinner{ display:flex; }
+    .captcha-box .cbx.loading .tick{ display:none; }
+    .captcha-box .captcha-badge{ width:28px; height:28px; border-radius:6px; background:#e5e7eb; display:flex; align-items:center; justify-content:center; font-weight:800; color:#6b7280; flex:0 0 auto; }
+    .captcha-box .captcha-text{ flex:1; }
+    .captcha-box .captcha-text .captcha-hint{ text-align:left; }
+    .face-shot img{ width:min(360px, 100%); display:block; margin:8px auto 0; border-radius:12px; border:1px solid var(--line); }
+    .certificate{ position:relative; }
+    .certificate > img{ display:block; width:100%; height:auto; }
+    .face-shot-for-certification{ 
+      position:absolute; 
+      top:40%; 
+      left:50%; 
+      transform:translate(-50%,-50%); 
+      width:clamp(80px, 22vw, 160px); 
+      height:clamp(100px, 28vw, 200px); 
+      border:2px solid #e5e7eb; 
+      border-radius:12px; 
+      overflow:hidden; 
+      box-shadow:0 2px 8px rgba(0,0,0,.12); 
+      background:#fff; 
+      z-index: 2; 
+    }
+    .face-shot-for-certification img{ width:100%; height:100%; object-fit:cover; display:block; }
+    /* ステップ間で見た目幅がブレないよう主要ブロックを同幅に寄せる */
+    .camera, .face-shot, .tea .certificate { max-width:420px; margin-left:auto; margin-right:auto; }
+
+    footer{border-top:1px solid var(--line); background:#fff}
+    .copy{color:#6b7280; font-size:12px}
+
+    .badge{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; margin:12px auto 0; background:#eef2ff; color:#1d4ed8; border-radius:10px; font-weight:700; font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <a href="index.html" class="brand-link" aria-label="ホームに戻る">
+          <img src="images/logo.svg" alt="" width="30" height="30">
+          <span class="brand-title">世界一堅牢な認証</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="hero" aria-labelledby="backgroundCard">
+      <section id="step0" class="card">
+        <div class="logo" aria-hidden="true">
+          <img src="images/logo.svg" alt="ロゴ" width="100" height="100">
+        </div>
+        <h1 class="lead">世界一堅牢な認証</h1>
+        <p class="sub">ようこそ！</p>
+        <div class="actions">
+          <button class="btn btn-primary" id="startBtn">認証する</button>
+          <button class="btn btn-ghost" id="altBtn">会員でない方はこちら（新規登録）</button>
+        </div>
+      </section>
+
+      <section id="step1" class="card hidden">
+        <h2 class="lead">SMS認証</h2>
+        <p class="sub">携帯電話番号を入力してください。</p>
+        <div class="err hidden" id="smsErr1"></div>
+        <input type="text" id="phoneNumber" placeholder="電話番号" />
+        <div class="actions">
+          <button class="btn btn-primary" id="sendSmsBtn">認証コードを送信</button>
+          <button class="btn btn-ghost" id="toStep2FromSms">別の方法で認証する（メール）</button>
+        </div>
+      </section>
+
+      <section id="step1_loading" class="card hidden">
+        <h2 class="lead">送信中...</h2>
+        <div class="loading"><div class="spinner"></div></div>
+        <p class="sub">しばらくお待ちください。</p>
+      </section>
+
+      <section id="step1_fail" class="card hidden">
+        <h2 class="lead">SMS送信失敗</h2>
+        <p class="sub">サーバーがお茶休憩中です<br />（送信不可）</p>
+        <div class="tea">
+          <img src="images/tea.png" alt="お茶休憩" width="100" height="100">
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="resendSmsBtn">再送する</button>
+          <button class="btn btn-ghost" id="backToSmsBtn">携帯電話番号の入力に戻る</button>
+          <button class="btn btn-ghost" id="toStep2FromFail">別の方法で認証する（メール）</button>
+        </div>
+      </section>
+
+      <section id="step2" class="card hidden">
+        <h2 class="lead">メール認証</h2>
+        <p class="sub">メールアドレスを入力してください。</p>
+        <div class="err hidden" id="mailErr1"></div>
+        <input type="text" id="emailAddress" placeholder="メールアドレス" />
+        <div class="actions">
+          <button class="btn btn-primary" id="sendMailBtn">メールを送信</button>
+          <button class="btn btn-ghost" id="backToSmsBtnFromEmail">SMS認証に戻る</button>
+          <button class="btn btn-ghost" id="toStep3FromEmail">別の方法で認証する（顔認証）</button>
+        </div>
+        <div class="err hidden" id="mailErr1"></div>
+      </section>
+
+      <section id="step2_loading" class="card hidden">
+        <h2 class="lead">送信中...</h2>
+        <div class="loading"><div class="spinner"></div></div>
+        <p class="sub">しばらくお待ちください。</p>
+      </section>
+
+      <section id="step2_fail" class="card hidden">
+        <h2 class="lead">メール送信失敗</h2>
+        <p class="sub" id="mailErrFail">OutlookとGmailがけんかしているため<br />配送に失敗しました（送信不可）</p>
+        <div class="tea">
+          <img src="images/kenka.png" alt="喧嘩" width="100" height="100">
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="resendEmailBtn">再送する</button>
+          <button class="btn btn-ghost" id="backToEmailBtn">メールアドレスの入力に戻る</button>
+          <button class="btn btn-ghost" id="toStep3FromEmailFail">別の方法で認証する（顔認証）</button>
+        </div>
+      </section>
+
+      <section id="step3" class="card hidden">
+        <h2 class="lead">顔認証</h2>
+        <p class="sub">顔を枠に合わせてください。</p>
+        <div class="camera">
+          <video id="faceVideo" autoplay playsinline muted></video>
+          <svg class="overlay" viewBox="0 0 360 480" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <mask id="faceCutout">
+                <rect x="0" y="0" width="360" height="480" fill="white"/>
+                <!-- 顔用の縦長楕円 -->
+                <ellipse cx="180" cy="240" rx="110" ry="140" fill="black"/>
+              </mask>
+            </defs>
+            <!-- 外側を薄暗く、楕円内は透過 -->
+            <rect x="0" y="0" width="360" height="480" fill="#000" opacity="0.35" mask="url(#faceCutout)"/>
+            <!-- 輪郭線（見やすいように） -->
+            <ellipse cx="180" cy="240" rx="110" ry="140" fill="none" stroke="#fff" stroke-width="3"/>
+          </svg>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="openCameraBtn">カメラを起動</button>
+          <button class="btn btn-primary hidden" id="faceScanBtn">認証する（撮影）</button>
+        </div>
+        <div class="err hidden" id="faceErr"></div>
+        <div class="actions">
+          <button class="btn btn-ghost" id="toStep2FromFace">メール認証に戻る</button>
+        </div>
+      </section>
+
+      <section id="step3_loading" class="card hidden">
+        <h2 class="lead">解析中...</h2>
+        <div class="loading"><div class="spinner"></div></div>
+        <p class="sub">顔のオーラを測定中です。</p>
+      </section>
+
+      <section id="step3_fail" class="card hidden">
+        <h2 class="lead">顔認証失敗</h2>
+        <div class="face-shot"><img id="faceSnap" alt="撮影画像"></div>
+        <p class="sub" id="faceErrFail"></p>
+        <div class="actions">
+          <button class="btn btn-primary" id="retryFaceBtn">もう一度試す</button>
+          <button class="btn btn-ghost" id="toStep4FromFaceFail">別の方法で認証する（音声認証）</button>
+        </div>
+      </section>
+
+      <section id="step4" class="card hidden">
+        <h2 class="lead">音声認証</h2>
+        <p class="sub">音量メーターが反応するように<br />大声で「セキュリティ！」と<br />3回叫んでください。</p>
+        <div class="meter">
+          <div class="bar" id="voiceLevel"></div>
+          <div class="no-go" aria-hidden="true"></div>
+          <div class="marker" aria-hidden="true"></div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="openMicBtn">録音を開始</button>
+          <button class="btn btn-primary hidden" id="voiceScanBtn">認証する</button>
+        </div>
+        <div class="err hidden" id="voiceErr"></div>
+        <div class="actions">
+          <button class="btn btn-ghost" id="toStep3FromVoice">顔認証に戻る</button>
+        </div>
+      </section>
+
+      <section id="step4_loading" class="card hidden">
+        <h2 class="lead">解析中...</h2>
+        <div class="loading"><div class="spinner"></div></div>
+        <p class="sub">声量を測定中です。</p>
+      </section>
+
+      <section id="step4_fail" class="card hidden">
+        <h2 class="lead">音声認証失敗</h2>
+        <p class="sub" id="voiceErrFail">声が小さい！<br />気合が足りていないので、認証不可です</p>
+        <div class="actions">
+          <button class="btn btn-primary" id="retryVoiceBtn">もう一度試す</button>
+          <button class="btn btn-ghost" id="toStep5FromVoiceFail">別の方法で認証する（哲学認証）</button>
+        </div>
+      </section>
+
+      <section id="step5" class="card hidden">
+        <h2 class="lead">哲学認証</h2>
+        <div class="captcha-box" id="phBox">
+          <div class="cbx" id="phCbx" aria-hidden="false">
+            <input type="checkbox" id="phCheck" aria-label="私は正直な人間です">
+            <div class="tick" aria-hidden="true"></div>
+            <div class="mini-spinner" aria-hidden="true"></div>
+          </div>
+          <div class="captcha-text">
+            <div id="phLabel" style="font-weight:800;">私は正直な人間です</div>
+            <div class="hint captcha-hint" id="phHint">reKAPTCHA の高度AI審査を通過してください</div>
+          </div>
+          <div class="tea">
+            <img src="images/reKAPTCHA.png" alt="reKAPTCHA" width="50" height="50">
+          </div>
+        </div>
+        <div class="err hidden" id="phErr"></div>
+      </section>
+
+      <section id="result" class="card hidden">
+        <h2 class="lead">認証成功！</h2>
+        <p class="sub" id="countMsg">突破者集計中…</p>
+        <div class="tea">
+          <div class="certificate">
+            <img src="images/congratulations.png" alt="認定証">
+            <div class="face-shot-for-certification"><img id="faceSnapForCertification" alt="撮影画像"></div>
+          </div>
+        </div>
+        <div class="actions">
+          <div id="shareContainer">
+            <a href="https://twitter.com/share" class="twitter-share-button" data-size="large" data-show-count="false">Tweet</a>
+          </div>
+        </div>
+      </section>
+
+      <p class="hint">※ 本サイトはセキュリティの観点から<br />入力いただいた情報は一切保存しておりません。</p>
+      <p class="hint">※ ブラウザの戻るでは戻らないでください。</p>
+      <div class="badge progress" id="statusBadge" aria-live="polite">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v18M3 12h18" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"/></svg>
+        認証前｜進捗 0/5
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap copy">© 2025 WSAA（World’s Strongest Auth App）</div>
+  </footer>
+  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/libphonenumber-js/1.10.53/libphonenumber-js.min.js"></script>
+  <script>
+    const $ = (id)=>document.getElementById(id);
+
+    // 表示ステップ管理（数値 or セクションID を受け付け）
+    const sections = ['step0','step1','step1_loading','step1_fail','step2','step2_loading','step2_fail','step3','step3_loading','step3_fail','step4','step4_loading','step4_fail','step5','result'];
+    const progressMap = { step0:0, step1:1, step1_loading:1, step1_fail:1, step2:2, step2_loading:2, step2_fail:2, step3:3, step3_loading:3, step3_fail:3, step4:4, step4_loading:4, step4_fail:4, step5:5, result:5 };
+    const total = 5;
+    let currentStepId = 'step0';
+    const setStep = (step, opts = { pushHistory: true }) => {
+      const targetId = typeof step === 'number' ? `step${step}` : step;
+      sections.forEach(id => {
+        const el = $(id);
+        if (el) el.classList.toggle('hidden', id !== targetId);
+      });
+      const prog = progressMap[targetId] ?? 0;
+      $('statusBadge').textContent = `認証前｜進捗 ${prog}/${total}`;
+      try { if (typeof stopCamera === 'function' && targetId !== 'step3') stopCamera(); } catch(_){}
+      try { if (typeof stopMic === 'function' && targetId !== 'step4') stopMic(); } catch(_){}
+      try { if (targetId === 'step5' && typeof resetPhUI === 'function') resetPhUI(); } catch(_){}
+      currentStepId = targetId;
+      // History連携（戻る対策）
+      if (opts.pushHistory && 'pushState' in history) {
+        try { history.pushState({ step: targetId }, '', `#${targetId}`); } catch(_){}
+      }
+      // ページ上部にスクロール
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    };
+
+    function navigate(to){ location.href = to; }
+
+    // ページ読み込み時にトップにスクロール
+    window.addEventListener('load', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    
+    // DOM読み込み完了時にもトップにスクロール（確実に実行されるように）
+    document.addEventListener('DOMContentLoaded', () => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+
+    $('altBtn').onclick = () => { alert('現在、新規登録は受付停止中です（セキュリティ強化のため）'); };
+    $('startBtn').onclick = () => setStep(1);
+
+    // 初期ヒストリー状態
+    try { if ('replaceState' in history) history.replaceState({ step: currentStepId }, '', `#${currentStepId}`); } catch(_){}
+
+    // ブラウザ戻る対策：確認ダイアログ + 元のステップに戻す
+    window.addEventListener('popstate', (e) => {
+      const target = (e && e.state && e.state.step) ? e.state.step : 'step0';
+      const ok = confirm('戻る操作を行いますか？現在の進捗が失われる可能性があります。');
+      if (!ok) {
+        // 戻るをキャンセルして現在の状態を維持
+        try { history.pushState({ step: currentStepId }, '', `#${currentStepId}`); } catch(_){}
+        return;
+      }
+      // 確認のうえ遷移（ヒストリーはすでに進んでいるため新規pushはしない）
+      setStep(target, { pushHistory: false });
+    });
+
+    // ページ離脱警告（任意：進捗があるときのみ）
+    window.addEventListener('beforeunload', (ev) => {
+      if (currentStepId !== 'step0') {
+        ev.preventDefault();
+        ev.returnValue = '';
+      }
+    });
+
+    // STEP1: SMS認証
+    let lastPhone = '';
+
+    function startSmsFlowWith(phone){
+      lastPhone = phone;
+      $('smsErr1').classList.add('hidden');
+      setStep('step1_loading');
+      setTimeout(() => {
+        setStep('step1_fail');
+      }, 2000);
+    }
+
+    $('sendSmsBtn').onclick = () => {
+      const phone = $('phoneNumber').value.trim();
+
+      if (!phone) {
+        $('smsErr1').textContent = '電話番号を入力してください。';
+        $('smsErr1').classList.remove('hidden');
+        return;
+      }
+
+      try {
+        let valid = true;
+        if (typeof libphonenumber !== 'undefined' && libphonenumber.parsePhoneNumberFromString) {
+          const parsed = libphonenumber.parsePhoneNumberFromString(phone, 'JP');
+          valid = !!parsed && parsed.isValid();
+        } else {
+          // libphonenumberができない場合の簡易チェック
+          valid = /^\+?\d[\d\s-]{7,}$/.test(phone);
+        }
+
+        if (!valid) {
+          $('smsErr1').textContent = '電話番号を正しい形式で入力してください。';
+          $('smsErr1').classList.remove('hidden');
+          return;
+        }
+
+        // 入力画面を隠してロード画面に
+        startSmsFlowWith(phone);
+
+      } catch (e) {
+        $('smsErr1').textContent = '番号の形式が不正です。';
+        $('smsErr1').classList.remove('hidden');
+      }
+    };
+    $('toStep2FromSms').onclick = () => setStep(2);
+    $('toStep2FromFail').onclick = () => setStep(2);
+    $('resendSmsBtn').onclick = () => {
+      if (lastPhone) {
+        $('phoneNumber').value = lastPhone;
+        startSmsFlowWith(lastPhone);
+      } else {
+        setStep(1); // 念のため未入力時は戻す
+      }
+    };
+    $('backToSmsBtn').onclick = () => setStep(1);
+
+    // STEP2: メール送信
+    $('sendMailBtn').onclick = () => {
+      const email = $('emailAddress').value.trim();
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!ok) {
+        $('mailErr1').textContent = 'メールアドレスを正しい形式で入力してください。';
+        $('mailErr1').classList.remove('hidden');
+        return;
+      }
+      $('mailErr1').classList.add('hidden');
+      startMailFlowWith(email);
+    };
+
+    function startMailFlowWith(email){
+      lastEmail = email;
+      $('mailErr1').classList.add('hidden');
+      setStep('step2_loading');
+      setTimeout(() => {
+        setStep('step2_fail');
+      }, 2000);
+    }
+    $('resendEmailBtn').onclick = () => {
+      if (lastEmail) {
+        $('emailAddress').value = lastEmail;
+        startMailFlowWith(lastEmail);
+      } else {
+        setStep(2); // 念のため未入力時は戻す
+      }
+    };
+    $('backToEmailBtn').onclick = () => setStep(2);
+    $('backToSmsBtnFromEmail').onclick = () => setStep(1);
+    $('toStep3FromEmail').onclick = () => setStep(3);
+    $('toStep3FromEmailFail').onclick = () => setStep(3);
+
+    // STEP3: 顔認証
+    let mediaStream = null;
+    let lastFaceSnapshot = '';
+    async function startCamera(){
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        mediaStream = stream;
+        $('faceVideo').srcObject = stream;
+        $('openCameraBtn').classList.add('hidden');
+        $('faceScanBtn').classList.remove('hidden');
+        $('faceErr').classList.add('hidden');
+      } catch (e) {
+        $('faceErr').textContent = 'カメラの使用が許可されませんでした。設定をご確認ください。';
+        $('faceErr').classList.remove('hidden');
+      }
+    }
+    function stopCamera(){
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+      const v = $('faceVideo');
+      if (v) v.srcObject = null;
+      const open = $('openCameraBtn');
+      const scan = $('faceScanBtn');
+      if (open && scan) { open.classList.remove('hidden'); scan.classList.add('hidden'); }
+    }
+    const faceRejectMessages = [
+      '昨日の顔と違います、ちょっとむくんでる？（認証不可）',
+      '笑顔が不自然です（認証不可）',
+      'オーラが弱いです（認証不可）'
+    ];
+    $('openCameraBtn').onclick = startCamera;
+    $('faceScanBtn').onclick = () => {
+      $('faceErr').classList.add('hidden');
+      // 撮影
+      lastFaceSnapshot = captureFaceSnapshot();
+      // 解析中画面へ
+      setStep('step3_loading');
+      setTimeout(() => {
+        const msg = faceRejectMessages[Math.floor(Math.random()*faceRejectMessages.length)];
+        const img = $('faceSnap');
+        if (img && lastFaceSnapshot) img.src = lastFaceSnapshot;
+        $('faceErrFail').textContent = msg;
+        setStep('step3_fail');
+      }, 1300);
+    };
+    function captureFaceSnapshot(){
+      const v = $('faceVideo');
+      try{
+        const w = v.videoWidth || 360;
+        const h = v.videoHeight || 480;
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        // ミラーリング（見た目と同じように）
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(v, 0, 0, w, h);
+        return canvas.toDataURL('image/jpeg', 0.9);
+      }catch(e){
+        return '';
+      }
+    }
+    $('toStep2FromFace').onclick = () => setStep(2);
+    $('toStep4FromFaceFail').onclick = () => setStep(4);
+
+    // STEP4: 音声認証
+    let micStream = null, audioCtx = null, analyser = null, rafId = 0;
+    function voiceLevelEl(){ return $('voiceLevel'); }
+    async function startMic(){
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        micStream = stream;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AC();
+        const source = audioCtx.createMediaStreamSource(stream);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.8;
+        source.connect(analyser);
+        $('openMicBtn').classList.add('hidden');
+        $('voiceScanBtn').classList.remove('hidden');
+        $('voiceErr').classList.add('hidden');
+        tickLevel();
+      } catch (e) {
+        $('voiceErr').textContent = 'マイクの使用が許可されませんでした。設定をご確認ください。';
+        $('voiceErr').classList.remove('hidden');
+      }
+    }
+    function tickLevel(){
+      const bufLen = analyser ? analyser.fftSize : 0;
+      const data = new Uint8Array(bufLen);
+      const bar = voiceLevelEl();
+      const loop = () => {
+        if (!analyser) return;
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i=0;i<data.length;i++){ const v = data[i]-128; sum += v*v; }
+        const rms = Math.sqrt(sum / (data.length || 1));
+        const pct = Math.min(100, Math.max(0, (rms/40)*100));
+        const capped = Math.min(80, pct); // 見た目上は最大80%に制限（目標に届かない演出）
+        if (bar) bar.style.width = capped.toFixed(0) + '%';
+        rafId = requestAnimationFrame(loop);
+      };
+      rafId = requestAnimationFrame(loop);
+    }
+    function stopMic(){
+      if (rafId) cancelAnimationFrame(rafId), rafId = 0;
+      if (micStream) { micStream.getTracks().forEach(t=>t.stop()); micStream = null; }
+      if (audioCtx) { audioCtx.close(); audioCtx = null; }
+      const bar = voiceLevelEl();
+      if (bar) bar.style.width = '0%';
+      const open = $('openMicBtn');
+      const scan = $('voiceScanBtn');
+      if (open && scan) { open.classList.remove('hidden'); scan.classList.add('hidden'); }
+    }
+    $('openMicBtn').onclick = startMic;
+    $('voiceScanBtn').onclick = () => {
+      $('voiceErr').classList.add('hidden');
+      setStep('step4_loading');
+      stopMic();
+      setTimeout(()=>{
+        $('voiceErrFail').textContent = '声が小さい！気合が足りていないので、認証不可です';
+        setStep('step4_fail');
+      }, 1200);
+    };
+    $('retryVoiceBtn').onclick = () => setStep(4);
+    $('toStep3FromVoice').onclick = () => setStep(3);
+    $('retryFaceBtn').onclick = () => setStep(3);
+    $('toStep4FromFaceFail').onclick = () => setStep(4);
+    $('toStep5FromVoiceFail').onclick = () => setStep(5);
+
+    // STEP5: 哲学認証（reCAPTCHA風）
+    let phDishonestEnabled = false; // 初回は正直→不合格。2回目以降で「不誠実」を提示して合格。
+    function resetPhUI(){
+      phDishonestEnabled = false;
+      $('phLabel').textContent = '私は正直な人間です';
+      const ck = $('phCheck'); if (ck) ck.checked = false;
+      $('phErr').classList.add('hidden');
+      const box = $('phBox'); if (box) box.classList.remove('error');
+      const cbx = $('phCbx'); if (cbx) cbx.classList.remove('checked','loading');
+    }
+    // step5 表示時のUI初期化は setStep 内で呼び出し
+
+    // チェックボックスをreCAPTCHA風に非同期検証
+    (function initPhCaptcha(){
+      const ck = $('phCheck');
+      const cbx = $('phCbx');
+      const box = $('phBox');
+      if (!ck || !cbx) return;
+      ck.addEventListener('click', (e)=>{
+        e.preventDefault();
+        if (cbx.classList.contains('loading')) return;
+        $('phErr').classList.add('hidden');
+        box && box.classList.remove('error');
+        cbx.classList.add('loading');
+        setTimeout(()=>{
+          cbx.classList.remove('loading');
+          if (!phDishonestEnabled) {
+            // 初回：正直 → 不合格。文言を「不誠実」に切り替え。
+            ck.checked = false;
+            cbx.classList.remove('checked');
+            box && box.classList.add('error');
+            const msg = '多くの場合、正直さが短絡的な利益をもたらすことはありません。';
+            $('phErr').textContent = msg;
+            $('phErr').classList.remove('hidden');
+            $('phLabel').textContent = '私は不誠実な人間です';
+            phDishonestEnabled = true;
+          } else {
+            // 2回目以降：「不誠実」 → 合格
+            ck.checked = true;
+            cbx.classList.add('checked');
+            box && box.classList.remove('error');
+            (async ()=>{
+              setStep('result');
+              const img = $('faceSnapForCertification');
+              if (img && lastFaceSnapshot) img.src = lastFaceSnapshot;
+              await onBreakthrough();
+              updateShareLink();
+            })();
+          }
+        }, 900);
+      });
+    })();
+
+    // 結果画面：カウンタ（counterapi.dev） + 共有
+    async function onBreakthrough() {
+      try {
+        // 1) インクリメント（失敗しても続行）
+        await fetch('https://api.counterapi.dev/v2/wsaa/success/up', { method: 'GET', cache: 'no-store' });
+      } catch (_) {}
+      try {
+        // 2) 現在値取得
+        const r = await fetch('https://api.counterapi.dev/v2/wsaa/success', { cache: 'no-store' });
+        const j = await r.json();
+        const value = j && j.data && typeof j.data.up_count === 'number' ? j.data.up_count : null;
+        if (value != null) {
+          $('countMsg').textContent = `世界一堅牢な認証の ${Number(value).toLocaleString()} 人目の突破者になりました`;
+          return;
+        }
+        $('countMsg').textContent = '世界一堅牢な認証の突破者になりました';
+      } catch (e) {
+        $('countMsg').textContent = '世界一堅牢な認証の突破者になりました';
+      }
+    }
+    function updateShareLink(){
+      const text = $('countMsg')?.textContent || '世界一堅牢な認証を突破しました！';
+      const url = location.href;
+      const hashtags = '世界一堅牢な認証,多要素認証,MFA';
+      const container = document.getElementById('shareContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      const a = document.createElement('a');
+      a.href = 'https://twitter.com/share';
+      a.className = 'twitter-share-button';
+      a.setAttribute('data-size','large');
+      a.setAttribute('data-text', text);
+      a.setAttribute('data-url', url);
+      a.setAttribute('data-hashtags', hashtags);
+      a.setAttribute('data-show-count','false');
+      a.textContent = 'Tweet';
+      container.appendChild(a);
+      if (window.twttr && twttr.widgets && typeof twttr.widgets.load === 'function') {
+        twttr.widgets.load(container);
+      }
+    }
+  </script>
+</body>
+</html>

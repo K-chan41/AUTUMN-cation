@@ -1,4 +1,6 @@
-## 世界一堅牢な認証
+## 世界一堅牢な認証 （World’s Strongest Auth App）
+
+<img src="images/ogp.png">
 
 多要素認証が必須化する昨今。
 
